@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------
 # Created by Ulysses Carlos on 07/23/2020 at 03:43 PM
 #
@@ -8,8 +7,17 @@
 # them to Romanji, allowing the tags to be displayed in Latin Characters.
 # It's better than to do so by hand in most cases.
 #
+# Requires:
+# * ffmpeg to convert to different formats
+# * translate-shell to convert to romaji
+#
 # Supported Formats:
 # * Flac
+# * MP3
+# * Vorbis
+#
+# TO-DO:
+# * m4a support
 # -----------------------------------------------------------------------------
 
 from sys import argv
@@ -17,10 +25,9 @@ from os import system
 from sys import exit
 from mutagen import File
 from mutagen.easyid3 import EasyID3
+from mutagen.aac import AAC
 from pathlib import Path
 import subprocess
-from textwrap import dedent
-from textwrap import fill
 
 song_tag_list = []
 accepted_formats = ['.flac', '.mp3', 'ogg']
@@ -28,13 +35,11 @@ file_format_list = ['mp3', 'm4a', 'ogg']
 
 
 def help():
-    print(fill(dedent("""
-    USAGE: ./Romanjize.py [OPTION] [OPTION PARAMETERS]
-
-    OPTION LIST:
-        -c : Convert the directory to a given format (mp3) with a specified bit rate.
-        -h : Display this message.
-    """)))
+    print("USAGE: ./Romanjize.py [OPTION] [OPTION PARAMETERS]")
+    print("")
+    print("OPTION LIST")
+    print("\t-c: Convert the directory to a given format and bitrate.")
+    print("\t-h: Display this message.")
 
 
 def retrive_tags(file_path):
@@ -49,6 +54,8 @@ def retrive_tags(file_path):
 
     if file_path.endswith(".mp3"):
         muta = EasyID3(file_path)
+    elif file_path.endswith(".m4a"):
+        muta = AAC(file_path)
     else:
         muta = File(file_path)
 
@@ -98,6 +105,8 @@ def apply_tags(file_path, tag_list):
 
     if file_path.endswith(".mp3"):
         muta = EasyID3(file_path)
+    elif file_path.endswith(".m4a"):
+        muta = AAC(file_path)
     else:
         muta = File(file_path)
 
