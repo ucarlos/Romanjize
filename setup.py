@@ -9,7 +9,7 @@ config = {"description": "A bunch of small tools that I made using Python.",
           "download_url": "Where to download it.",
           "author_email": "ucarlos1@student.gsu.edu",
           "version": "0.1",
-          "install_requires": ['nose', 'mutagen'],
+          "install_requires": ['nose', 'mutagen', 'googletrans'],
           "packages": ['Minor'],
           "scripts": [],
           "name": "uly-minor-programs-0.1"}
