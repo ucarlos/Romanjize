@@ -4,9 +4,9 @@
 # Created by Ulysses Carlos on 07/23/2020 at 03:43 PM
 #
 # Romanjize.py
-# This program takes flac or mp3 tags with Japanese Characters and converts
-# them to Romanji, allowing the tags to be displayed in Latin Characters.
-# It's better than to do so by hand in most cases.
+# This program takes music tags with Japanese Characters and converts
+# them to Romanji or English, allowing the tags to be displayed on audio
+# devices that can only render ASCII or Latin characters only.
 #
 # Requires:
 #     * ffmpeg to convert to different audio formats
@@ -18,10 +18,9 @@
 # Supported Formats:
 # * Flac
 # * MP3
-# * Vorbis
+# * m4a
+# * OGG vorbis
 #
-# TO-DO:
-# * m4a support
 # -----------------------------------------------------------------------------
 
 from sys import argv
@@ -30,13 +29,12 @@ from sys import exit
 from googletrans import Translator
 from mutagen import File
 from mutagen.easyid3 import EasyID3
-from mutagen.aac import AAC
+from mutagen.easymp4 import EasyMP4
 from pathlib import Path
 import subprocess
 
-
-accepted_formats = ['.flac', '.mp3', 'ogg']
-file_format_list = ['mp3', 'm4a', 'ogg']
+accepted_formats = ['.flac', ".m4a", '.mp3', 'ogg']
+file_format_list = ['mp3', 'm4a']
 
 
 def help():
@@ -61,7 +59,7 @@ def retrive_tags(file_path):
     if file_path.endswith(".mp3"):
         muta = EasyID3(file_path)
     elif file_path.endswith(".m4a"):
-        muta = AAC(file_path)
+        muta = EasyMP4(file_path)
     else:
         muta = File(file_path)
 
@@ -83,26 +81,20 @@ def shell_translate_tags(tag_list):
 
         language = subprocess.getoutput(lang_command)
 
-
         error_message = """[ERROR] Language not found: auto
         Run '-reference / -R' to see a list of available languages."""
         # Skip any tags that are not japanese or chinese
         if (language == error_message):
             print("The Translator is messing up again.")
             print(f"It's spitting out this:\n{error_message}.\n")
-            print("translate-shell sometimes does this, so I'll revert back the tags.")
+            print("This sometimes happens with translate-shell, so "
+                  + "I'll revert the tags.")
             print("Try the -g option if you want to translate "
                   + "the tags in english instead.")
-            return tag_list
+            exit(1)
         elif not (language == "日本語" or language == "简体中文"):
             print("Skipping non-japanese tag...")
             continue
-
-
-        # command = "trans -show-dictionary n -show-languages n " \
-        #     + "-show-translation n -show-alternatives n " \
-        #     + "-show-prompt-message n -show-original-dictionary n \'" \
-        #     + str(tag_list[key]) + "\'"
 
         command = f"trans {str(tag_list[key])} | head -2 | tail -1"
 
@@ -119,7 +111,6 @@ def shell_translate_tags(tag_list):
         else:
             translated_tag_list.update({key: tag})
 
-
     return translated_tag_list
 
 
@@ -134,8 +125,8 @@ def google_translate_tags(tag_list):
     for key in tag_list:
         language = g_translate.detect(str(tag_list[key]))
 
-        # Skip any English tags if found.
-        if language == 'en':
+        # Skip any non-japanese tags if found.
+        if language.lang != 'ja':
             continue
 
         result = g_translate.translate(str(tag_list[key]))
@@ -144,6 +135,7 @@ def google_translate_tags(tag_list):
         else:
             translated_tag_list.update({key: str(result.text)})
 
+    print(translated_tag_list)
     return translated_tag_list
 
 
@@ -155,7 +147,7 @@ def apply_tags(file_path, tag_list):
     if file_path.endswith(".mp3"):
         muta = EasyID3(file_path)
     elif file_path.endswith(".m4a"):
-        muta = AAC(file_path)
+        muta = EasyMP4(file_path)
     else:
         muta = File(file_path)
 
@@ -177,11 +169,8 @@ def convert_file(file_path, new_format, bitrate):
         command += f"-codec:a libmp3lame -b:a {bitrate}k "
     elif new_format == "m4a":
         command += f"-c:a aac -b:a {bitrate}k "
-    elif new_format == "ogg":
-        command += f"-c:a libvorbis -b:a {bitrate}k "
     else:
         raise Exception("Cannot convert to " + new_format + " format.")
-
 
     # Create the appropriate new file name:
     index = file_path.rfind(".")
@@ -192,7 +181,8 @@ def convert_file(file_path, new_format, bitrate):
     new_name += new_format
     command = command + "\"" + new_name + "\""
     # Now make the system call.
-    print(command)
+
+    # print(command)
     system(command)
 
 
@@ -239,8 +229,6 @@ def directory_translate(translator):
                 print(f"Translating {file.name} to Romanji.\n")
                 translated_tags = shell_translate_tags(tag_list)
 
-
-            # print(translated_tags)
             fix_tags(translated_tags)
             # print(translated_tags)
             apply_tags(filename, translated_tags)
@@ -271,6 +259,8 @@ def directory_convert(format, bitrate):
 
 def main():
     # print(str(argv))
+
+    # Yeah, it's pretty awful
     if len(argv) == 1:
         directory_translate("shell")
     elif len(argv) == 2:
@@ -285,7 +275,7 @@ def main():
         for i in range(1, len(argv)):
             if argv[i] == "-h":
                 help()
-                break
+                exit(0)
             elif argv[i] == "-g":
                 directory_translate("google")
             elif argv[i] == "-s":
@@ -298,9 +288,9 @@ def main():
                     if bit_rate < 0:
                         raise Exception("Cannot have a negative bit rate.")
                     directory_convert(file_format, bit_rate)
-                    break
+                    exit(0)
                 else:
-                    raise Exception(f"Cannot convert to file format {file_format}.")
+                    raise Exception(f"Cannot convert to {file_format}.")
             else:
                 raise Exception(f"Invalid Command {argv[i]}")
 
