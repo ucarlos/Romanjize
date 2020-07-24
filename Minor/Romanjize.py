@@ -8,8 +8,11 @@
 # It's better than to do so by hand in most cases.
 #
 # Requires:
-# * ffmpeg to convert to different formats
-# * translate-shell to convert to romaji
+#     * ffmpeg to convert to different formats
+#     * translate-shell to convert to romaji
+# In Ubuntu, you can install them by doing
+#     sudo apt-get install ffmpeg translate-shell
+# You may have to use another command on other package managers.
 #
 # Supported Formats:
 # * Flac
@@ -29,7 +32,6 @@ from mutagen.aac import AAC
 from pathlib import Path
 import subprocess
 
-song_tag_list = []
 accepted_formats = ['.flac', '.mp3', 'ogg']
 file_format_list = ['mp3', 'm4a', 'ogg']
 
