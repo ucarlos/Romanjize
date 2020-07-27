@@ -212,15 +212,14 @@ def directory_translate(translator):
     pathlist = current_path.glob("*")
     for file in pathlist:
         filename = file.as_posix()
-        is_valid_file = False
+        # is_valid_file = False
         # Check if filename ends in an accepted format.
-        for i in range(0, len(accepted_formats)):
-            if filename.endswith(accepted_formats[i]):
-                is_valid_file = True
-                break
+        # for i in range(0, len(accepted_formats)):
+        #     if filename.endswith(accepted_formats[i]):
+        #         is_valid_file = True
+        #         break
 
-        if is_valid_file:
-
+        if file.suffix in accepted_formats:
             tag_list = retrive_tags(filename)
             if translator == "google":
                 print(f"Translating {file.name} to English.\n")
@@ -243,14 +242,14 @@ def directory_convert(format, bitrate):
     pathlist = current_path.glob("*")
     for file in pathlist:
         filename = file.as_posix()
-        is_valid_file = False
+        # is_valid_file = False
         # Check if filename ends in an accepted format.
-        for i in range(0, len(accepted_formats)):
-            if filename.endswith(accepted_formats[i]):
-                is_valid_file = True
-                break
+        # for i in range(0, len(accepted_formats)):
+        #     if filename.endswith(accepted_formats[i]):
+        #         is_valid_file = True
+        #         break
 
-        if is_valid_file:
+        if file.suffix in accepted_formats:
             convert_file(filename, format, bitrate)
         else:
             print(f"{file.name} is not a accepted format. Skipping.")
