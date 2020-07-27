@@ -135,7 +135,7 @@ def google_translate_tags(tag_list):
         else:
             translated_tag_list.update({key: str(result.text)})
 
-    print(translated_tag_list)
+    # print(translated_tag_list)
     return translated_tag_list
 
 
@@ -212,12 +212,6 @@ def directory_translate(translator):
     pathlist = current_path.glob("*")
     for file in pathlist:
         filename = file.as_posix()
-        # is_valid_file = False
-        # Check if filename ends in an accepted format.
-        # for i in range(0, len(accepted_formats)):
-        #     if filename.endswith(accepted_formats[i]):
-        #         is_valid_file = True
-        #         break
 
         if file.suffix in accepted_formats:
             tag_list = retrive_tags(filename)
@@ -225,11 +219,11 @@ def directory_translate(translator):
                 print(f"Translating {file.name} to English.\n")
                 translated_tags = google_translate_tags(tag_list)
             else:
-                print(f"Translating {file.name} to Romanji.\n")
+                print(f"Converting {file.name} into Romanji.\n")
                 translated_tags = shell_translate_tags(tag_list)
 
             fix_tags(translated_tags)
-            # print(translated_tags)
+
             apply_tags(filename, translated_tags)
         else:
             print(f"{file.name} is not a accepted format. Skipping.")
@@ -242,12 +236,6 @@ def directory_convert(format, bitrate):
     pathlist = current_path.glob("*")
     for file in pathlist:
         filename = file.as_posix()
-        # is_valid_file = False
-        # Check if filename ends in an accepted format.
-        # for i in range(0, len(accepted_formats)):
-        #     if filename.endswith(accepted_formats[i]):
-        #         is_valid_file = True
-        #         break
 
         if file.suffix in accepted_formats:
             convert_file(filename, format, bitrate)
