@@ -171,8 +171,8 @@ def convert_file(file_path, new_format, bitrate):
     """
 
     if (platform.system() == "Windows"):
-        ffmpeg = bin_path / "ffmpeg.exe"
-        command = f"str({ffmpeg}) -i \"{file_path}\" "
+        ffmpeg = str(bin_path / "ffmpeg.exe")
+        command = f"{ffmpeg} -i \"{file_path}\" "
     else:
         command = f"ffmpeg -i \"{file_path}\" "
 
