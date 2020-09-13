@@ -1,2 +1,2 @@
-# uly-minor-tools
-A small collection of tools made in Python.
+# Romanjize
+A small program to Romanize Japanese tags or convert Japanese tags into English
