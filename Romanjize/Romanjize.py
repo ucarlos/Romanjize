@@ -13,7 +13,12 @@
 #     * translate-shell to convert to romaji
 # In Ubuntu, you can install them by doing
 #     sudo apt-get install ffmpeg translate-shell
-# You may have to use another command on other package managers.
+# You may have to use another command on other package managers on other Linux
+# or UNIX machines You may need to compile ffmpeg if your package manager
+# does not provide ffmpeg.
+#
+# On Windows, you must have ffmpeg.exe in \bin in order to convert music.
+# Since translate-shell relies on bash, it is currently disabled for Windows.
 #
 # Supported Formats:
 # * Flac
@@ -32,9 +37,11 @@ from mutagen.easyid3 import EasyID3
 from mutagen.easymp4 import EasyMP4
 from pathlib import Path
 import subprocess
+import platform
 
 accepted_formats = ['.flac', ".m4a", '.mp3', 'ogg']
 file_format_list = ['mp3', 'm4a']
+bin_path = Path.cwd().parent / "bin"
 
 
 def help():
@@ -163,7 +170,11 @@ def convert_file(file_path, new_format, bitrate):
     using ffmpeg.
     """
 
-    command = f"ffmpeg -i \"{file_path}\" "
+    if (platform.system() == "Windows"):
+        ffmpeg = bin_path / "ffmpeg.exe"
+        command = f"str({ffmpeg}) -i \"{file_path}\" "
+    else:
+        command = f"ffmpeg -i \"{file_path}\" "
 
     if new_format == "mp3":
         command += f"-codec:a libmp3lame -b:a {bitrate}k "
@@ -191,7 +202,8 @@ def fix_tags(tag_list):
     Remove any parenthesis or brackets that surround a tag.
 
     """
-    filter_list = ["['", "[\"", "([\'", "([", "('", "(\""]
+    filter_list = ["['", "[\"", "([\'", "([", "('", "(\"",
+                   "\"'"]
 
     # Usually, it is either ([' or [', but if it isn'
     for key in tag_list:
@@ -207,8 +219,12 @@ def fix_tags(tag_list):
 
 
 def directory_translate(translator):
-    current_path = Path.cwd()
+    if (translator == "shell" and platform.system() == "Windows"):
+        raise Exception("This option is currently unavailable on "
+                        "Windows. Please use the \"-g\" option "
+                        " instead.")
 
+    current_path = Path.cwd()
     pathlist = current_path.glob("*")
     for file in pathlist:
         filename = file.as_posix()
@@ -245,9 +261,6 @@ def directory_convert(format, bitrate):
 
 
 def main():
-    # print(str(argv))
-
-    # Yeah, it's pretty awful
     if len(argv) == 1:
         directory_translate("shell")
     elif len(argv) == 2:

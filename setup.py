@@ -10,9 +10,9 @@ config = {"description": "A bunch of small tools that I made using Python.",
           "author_email": "ucarlos1@student.gsu.edu",
           "version": "0.1",
           "install_requires": ['nose', 'mutagen', 'googletrans'],
-          "packages": ['Minor'],
+          "packages": ['Romanjize'],
           "scripts": [],
-          "name": "uly-minor-programs-0.1"}
+          "name": "uly-romanjize-0.11"}
 
 
 setup(**config)
