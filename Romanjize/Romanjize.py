@@ -38,6 +38,7 @@ from mutagen.easymp4 import EasyMP4
 from pathlib import Path
 import subprocess
 import platform
+import re
 
 accepted_formats = ['.flac', ".m4a", '.mp3', 'ogg']
 file_format_list = ['mp3', 'm4a']
@@ -199,23 +200,51 @@ def convert_file(file_path, new_format, bitrate):
 
 def fix_tags(tag_list):
     """
-    Remove any parenthesis or brackets that surround a tag.
+    Remove any parenthesis, brackets, or any strange
+    characters that surround a tag.
 
     """
-    filter_list = ["['", "[\"", "([\'", "([", "('", "(\"",
-                   "\"'"]
-
+    regex_filter = "^[\w]+[\w\s\']+"
+    second_filter = "[^\w]+"
     # Usually, it is either ([' or [', but if it isn'
     for key in tag_list:
         result = str(tag_list[key])
-        length = len(result)
 
-        for i in filter_list:
-            check = result.find(i)
-            if check != -1:
-                result = result[len(i): (length - len(i))]
+        # print(f"Checking {result}")
+        check = re.search(regex_filter, result)
+        if check:
+            # Everything went well
+            continue
+        else:
+            second_check = re.search(second_filter, result)
+            if second_check:
+                remove_str = second_check.group()
+                # print(f"Need to remove {remove_str}")
+                find_begin = result.find(remove_str)
+                find_end = result.rfind(remove_str[::-1])
+
+                # print(f"find_begin: {find_begin}")
+                # print(f"find_end: {find_end}")
+                if find_begin == -1 and find_end == -1:
+                    print(f"Warning: Couldn't filter {result}!")
+                    continue
+                elif find_begin == find_end:  # Remove it once
+                    result = result[find_begin + len(remove_str):]
+                elif find_begin != -1 and find_end == -1:
+                    # If the reverse string is not a mirror of remove_str
+                    # Just remove it: (ex. '[ is reverse of [' )
+                    result = result[find_begin + len(remove_str):
+                                    -len(remove_str)]
+                else:
+                    result = result[find_begin + len(remove_str): find_end]
+                # print(f"changed to {result}\n")
+
+                # Now update key:
                 tag_list.update({key: result})
-                break
+            else:
+                print(f"Warning: {result} failed second check!"
+                      "Something is wrong!")
+                continue
 
 
 def directory_translate(translator):
