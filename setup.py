@@ -8,11 +8,11 @@ config = {"description": "A small program to convert Japanese tags into English.
           "url": "N/A",
           "download_url": "https://github.com/ucarlos/Romanjize",
           "author_email": "ucarlos1@student.gsu.edu",
-          "version": "0.11",
-          "install_requires": ['nose', 'mutagen', 'googletrans'],
+          "version": "0.14",
+          "install_requires": ['nose', 'mutagen', 'google_trans_new'],
           "packages": ['Romanjize'],
           "scripts": [],
-          "name": "romajize"}
+          "name": "romanjize"}
 
 
 setup(**config)

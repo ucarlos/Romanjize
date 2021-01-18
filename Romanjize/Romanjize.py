@@ -31,7 +31,7 @@
 from sys import argv
 from os import system
 from sys import exit
-from googletrans import Translator
+from google_trans_new import google_translator
 from mutagen import File
 from mutagen.easyid3 import EasyID3
 from mutagen.easymp4 import EasyMP4
@@ -128,20 +128,33 @@ def google_translate_tags(tag_list):
     These translations may be wrong.
     """
     translated_tag_list = tag_list
-
-    g_translate = Translator()
+    # print(f"Before Converting: {str(translated_tag_list)}")
+    g_translate = google_translator()
     for key in tag_list:
-        language = g_translate.detect(str(tag_list[key]))
+        # First, try to see if the tag can be displayed with latin characters only.
+        # if so, just skip it
+        can_skip = True
+        try:
+            string = str(tag_list[key])
+            string.encode("latin1")
+        except UnicodeEncodeError:
+            can_skip = False
 
+        # Next, detect the language.
+        language = g_translate.detect(str(tag_list[key]))[0]
         # Skip any non-japanese tags if found.
-        if not (language.lang == 'ja' or language.lang == "zh-CN"):
+        if not (language == 'ja' or language == "zh-CN") or can_skip:
             continue
 
+        # result = g_translate.translate(str(tag_list[key]))
+        # g_translate = google_translator()
         result = g_translate.translate(str(tag_list[key]))
+
         if not result:
             print("WARNING: I couldn't translate the tag. Skipping.")
         else:
-            translated_tag_list.update({key: str(result.text)})
+            # translated_tag_list.update({key: str(result.text)})
+            translated_tag_list.update({key: str(result)})
 
     # print(translated_tag_list)
     return translated_tag_list
@@ -204,47 +217,43 @@ def fix_tags(tag_list):
     characters that surround a tag.
 
     """
-    regex_filter = "^[\w]+[\w\s\']+"
-    second_filter = "[^\w]+"
-    # Usually, it is either ([' or [', but if it isn'
+
+    # The regex pattern should extract any tag enclosed in '"[]() or any weird
+    # punctuation. However, if the tag contains punctuation as a result of its
+    # name, then that will be cut off from the tag.
+    regex_pattern = r"[\w](\w|\s|([!\"\#$%&\'()*+,\-\.\/:;<=>\?@\[\\\]^_‘\{\|\}\~]))*([^ \"\#$%&\'\(\)*+,\-\.\/:;<=>@\[\\\]^_‘\{\|\}\~])"
+
+    small_pattern = r"^[\"\'\[\(]+\w[\'\"\]\s]+"
+    # print(f"full tag list: {str(tag_list)}")
     for key in tag_list:
         result = str(tag_list[key])
+        print(f"\nTesting {result}")
+        if result[len(result) - 1].isspace():
+            # Remove it
+            result = result[:-1]
 
-        # print(f"Checking {result}")
-        check = re.search(regex_filter, result)
-        if check:
-            # Everything went well
-            continue
+        # If the tag is just a single number, just extract it
+        small_check = re.search(small_pattern, result)
+        if small_check:
+            # print(f"{result} matches the small regex.")
+            value = re.search("\w", result)
+            if value:
+                # print(f"Found {value}")
+                tag_list.update({key: value[0]})
+                return
         else:
-            second_check = re.search(second_filter, result)
-            if second_check:
-                remove_str = second_check.group()
-                # print(f"Need to remove {remove_str}")
-                find_begin = result.find(remove_str)
-                find_end = result.rfind(remove_str[::-1])
-
-                # print(f"find_begin: {find_begin}")
-                # print(f"find_end: {find_end}")
-                if find_begin == -1 and find_end == -1:
-                    print(f"Warning: Couldn't filter {result}!")
-                    continue
-                elif find_begin == find_end:  # Remove it once
-                    result = result[find_begin + len(remove_str):]
-                elif find_begin != -1 and find_end == -1:
-                    # If the reverse string is not a mirror of remove_str
-                    # Just remove it: (ex. '[ is reverse of [' )
-                    result = result[find_begin + len(remove_str):
-                                    -len(remove_str)]
-                else:
-                    result = result[find_begin + len(remove_str): find_end]
-                # print(f"changed to {result}\n")
-
+            # Otherwise use the large pattern
+            # result = result[1:len(result) - 1]
+            # print(f"Checking \"{result}\"")
+            check = re.search(regex_pattern, result)
+            if check:
+                # print(f"{result} matches the full regex.")
+                # Simply retrieve the matched string:
+                result = check[0]
                 # Now update key:
                 tag_list.update({key: result})
             else:
-                print(f"Warning: {result} failed second check!"
-                      "Something is wrong!")
-                continue
+                print(f"Warning: Could not fix \"{result}\"")
 
 
 def directory_translate(translator):
