@@ -227,7 +227,7 @@ def fix_tags(tag_list):
     # print(f"full tag list: {str(tag_list)}")
     for key in tag_list:
         result = str(tag_list[key])
-        print(f"\nTesting {result}")
+        # print(f"\nTesting {result}")
         if result[len(result) - 1].isspace():
             # Remove it
             result = result[:-1]
