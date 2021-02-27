@@ -8,7 +8,7 @@ config = {"description": "A small program to convert Japanese tags into English.
           "url": "N/A",
           "download_url": "https://github.com/ucarlos/Romanjize",
           "author_email": "ucarlos1@student.gsu.edu",
-          "version": "0.14",
+          "version": "0.15",
           "install_requires": ['nose', 'mutagen', 'google_trans_new'],
           "packages": ['Romanjize'],
           "scripts": [],

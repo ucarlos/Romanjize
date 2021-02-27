@@ -68,6 +68,7 @@ def help():
     print("USAGE: ./Romanjize.py [OPTION] [OPTION PARAMETERS]")
     print("")
     print("OPTION LIST")
+    print("\t-d: Enable Debug Mode (Doesn't Modify audio tags)")
     print("\t-c: Convert the entire directory to a given format and bitrate.")
     print("\t-g: Use Google Translate to translate the tags into English.")
     print("\t-h: Display this message.")
