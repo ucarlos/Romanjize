@@ -24,7 +24,7 @@
 # * Flac
 # * MP3
 # * m4a
-# * OGG vorbis
+# * OGG Vorbis
 #
 # -----------------------------------------------------------------------------
 
@@ -43,6 +43,25 @@ import re
 accepted_formats = ['.flac', ".m4a", '.mp3', 'ogg']
 file_format_list = ['mp3', 'm4a']
 bin_path = Path.cwd().parent / "bin"
+
+
+# ------------------------------------------------------------------------------
+# Terminal Color class for debugging
+class term_color:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+# ------------------------------------------------------------------------------
+
+
+DEBUG_MODE = False
 
 
 def help():
@@ -84,6 +103,9 @@ def shell_translate_tags(tag_list):
     # Given the key, value, convert
     translated_tag_list = tag_list
 
+    if DEBUG_MODE:
+        print(f"{term_color.BOLD}{term_color.OKBLUE}Before Converting: {str(translated_tag_list)}{term_color.ENDC}")
+
     for key in tag_list:
         lang_command = f"trans -identify -no-ansi {str(tag_list[key])} | head -n 1"
 
@@ -119,6 +141,9 @@ def shell_translate_tags(tag_list):
         else:
             translated_tag_list.update({key: tag})
 
+    if DEBUG_MODE:
+        print(f"{term_color.BOLD}{term_color.OKBLUE}After Converting: {str(translated_tag_list)}{term_color.ENDC}")
+
     return translated_tag_list
 
 
@@ -128,7 +153,9 @@ def google_translate_tags(tag_list):
     These translations may be wrong.
     """
     translated_tag_list = tag_list
-    # print(f"Before Converting: {str(translated_tag_list)}")
+
+    if DEBUG_MODE:
+        print(f"{term_color.BOLD}{term_color.OKBLUE}Before Converting: {str(translated_tag_list)}{term_color.ENDC}")
     g_translate = google_translator()
     for key in tag_list:
         # First, try to see if the tag can be displayed with latin characters only.
@@ -156,7 +183,8 @@ def google_translate_tags(tag_list):
             # translated_tag_list.update({key: str(result.text)})
             translated_tag_list.update({key: str(result)})
 
-    # print(translated_tag_list)
+    if DEBUG_MODE:
+        print(f"{term_color.BOLD}{term_color.OKBLUE}After Converting: {str(translated_tag_list)}{term_color.ENDC}")
     return translated_tag_list
 
 
@@ -221,39 +249,36 @@ def fix_tags(tag_list):
     # The regex pattern should extract any tag enclosed in '"[]() or any weird
     # punctuation. However, if the tag contains punctuation as a result of its
     # name, then that will be cut off from the tag.
-    regex_pattern = r"[\w](\w|\s|([!\"\#$%&\'()*+,\-\.\/:;<=>\?@\[\\\]^_‘\{\|\}\~]))*([^ \"\#$%&\'\(\)*+,\-\.\/:;<=>@\[\\\]^_‘\{\|\}\~])"
+    regex_pattern = r"[\w](\w|\s|([!\`\~\"\#$%&\'()*+,\-\.\/:;<=>\?@\[\\\]^_‘\{\|\}\~]))*([^ \"\#$%&\'\(\)*+,\-\.\/:;<=>@\[\\\]^_‘\{\|\}\~])"
 
-    small_pattern = r"^[\"\'\[\(]+\w[\'\"\]\s]+"
     # print(f"full tag list: {str(tag_list)}")
     for key in tag_list:
         result = str(tag_list[key])
-        # print(f"\nTesting {result}")
-        if result[len(result) - 1].isspace():
-            # Remove it
-            result = result[:-1]
 
-        # If the tag is just a single number, just extract it
-        small_check = re.search(small_pattern, result)
-        if small_check:
-            # print(f"{result} matches the small regex.")
-            value = re.search("\w", result)
-            if value:
-                # print(f"Found {value}")
-                tag_list.update({key: value[0]})
-                return
-        else:
-            # Otherwise use the large pattern
+        # First remove the brackets surrounding the key.
+        # first_pass = re.sub(r"\[[\'\"]+", "", result)
+        # second_pass = re.sub(r"[\'\"]+\](\s+)?$", "", first_pass)
+        first_pass = re.sub(r"(^\[[\'\"]+)?([\'\"]+\](\s+)?$)?", "", result)
+
+        # Otherwise use the large pattern
+        if DEBUG_MODE:
             # result = result[1:len(result) - 1]
-            # print(f"Checking \"{result}\"")
-            check = re.search(regex_pattern, result)
-            if check:
-                # print(f"{result} matches the full regex.")
-                # Simply retrieve the matched string:
-                result = check[0]
-                # Now update key:
-                tag_list.update({key: result})
-            else:
-                print(f"Warning: Could not fix \"{result}\"")
+            print(f"Checking \"{first_pass}\"")
+        check = re.search(regex_pattern, first_pass)
+        if check:
+            if DEBUG_MODE:
+                print(f"{first_pass} matches the full regex and is now \"{check[0]}\"")
+
+            # Simply retrieve the matched string:
+            # result = check[0]
+            # Now update key:
+            tag_list.update({key: check[0]})
+        else:
+            print(f"Warning: \"{result}\" did not match the regular expression."
+                  " Skipping.")
+            # Still update the result if the first_pass is different
+            if first_pass != result:
+                tag_list.update({key: first_pass})
 
 
 def directory_translate(translator):
@@ -270,15 +295,20 @@ def directory_translate(translator):
         if file.suffix in accepted_formats:
             tag_list = retrive_tags(filename)
             if translator == "google":
+                if DEBUG_MODE:
+                    print("-" * 80)
                 print(f"Translating {file.name} to English.\n")
+
                 translated_tags = google_translate_tags(tag_list)
             else:
                 print(f"Converting {file.name} into Romanji.\n")
                 translated_tags = shell_translate_tags(tag_list)
 
             fix_tags(translated_tags)
-
-            apply_tags(filename, translated_tags)
+            if DEBUG_MODE:
+                print(f"{term_color.BOLD}{term_color.OKGREEN}Final Tags: {str(translated_tags)}{term_color.ENDC}")
+            else:
+                apply_tags(filename, translated_tags)
         else:
             print(f"{file.name} is not a accepted format. Skipping.")
             continue
@@ -299,9 +329,14 @@ def directory_convert(format, bitrate):
 
 
 def main():
+    global DEBUG_MODE
     if len(argv) == 1:
         directory_translate("shell")
     elif len(argv) == 2:
+        if argv[1] == "-d":
+            # Enable Debug Mode
+            DEBUG_MODE = True
+
         if argv[1] == "-g":
             directory_translate("google")
         elif argv[1] == "-s":
@@ -311,7 +346,9 @@ def main():
     else:
         # Iterate through the argv:
         for i in range(1, len(argv)):
-            if argv[i] == "-h":
+            if argv[i] == '-d':
+                DEBUG_MODE = True
+            elif argv[i] == "-h":
                 help()
                 exit(0)
             elif argv[i] == "-g":
